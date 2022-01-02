@@ -1,16 +1,17 @@
 import numpy as np
 import random
-from IPython.display import clear_output
 import time
 import tkinter as tk
 
 
 class SimulationResult:
-    sectionResultsList = []
+    def __init__(self):
+        self.sectionResultsList = []
 
 
 class SectionResult:
-    stepsResultList = []
+    def __init__(self):
+        self.stepsResultList = []
 
 
 def mock_result():
@@ -228,10 +229,6 @@ def create_route():
              Section("straight", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])]
     return route
 
-
-my_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]), Section("straight", 20, 3, [0, 1, 2], [False, False, False])]
-
-
 def create_window():
     root = tk.Tk()
     root.geometry("300x500")
@@ -272,25 +269,45 @@ def create_widgets(result):
     return parent
 
 
-# result = mock_result()
-# root = create_widgets(result)
-# root.mainloop()
+def run_simulation():
+    simulation_result = SimulationResult()
+
+    my_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+                Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
+                Section("straight", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])
+                ]
+
+    for section in my_route:
+        simulation_result.sectionResultsList.append(SectionResult())
+
+    for step in range(50):
+        # clear = "\n" * 100
+        # print(clear)
+        # clear_output()
+        # for i, section in enumerate(my_route):
+        #     if i == 0:
+        #         show_section(section)
+        #     else:
+        #         show_section(section)
+
+        accelerate(my_route)
+        random_change(my_route)
+        my_route = change_line(my_route)
+        avoid_crashes(my_route)
+        my_route = update(my_route)
+        # time.sleep(1)
+        # input('press enter')
+
+        for section_index, section in enumerate(my_route):
+            simulation_result.sectionResultsList[section_index].stepsResultList.append(np.zeros((section.length, section.width)))
+            for col_index, col in enumerate(section.road):
+                for cell_index, cell in enumerate(col):
+                    if cell.agent_state == 1:
+                        simulation_result.sectionResultsList[section_index].stepsResultList[step][col_index][cell_index] = 1
+
+    return simulation_result
 
 
-for _ in range(50):
-    clear = "\n" * 100
-    print(clear)
-    # clear_output()
-    for i, section in enumerate(my_route):
-        if i == 0:
-            show_section(section)
-        else:
-            show_section(section)
-
-    accelerate(my_route)
-    random_change(my_route)
-    my_route = change_line(my_route)
-    avoid_crashes(my_route)
-    my_route = update(my_route)
-    time.sleep(1)
-    # input('press enter')
+result = run_simulation()
+root = create_widgets(result)
+root.mainloop()
