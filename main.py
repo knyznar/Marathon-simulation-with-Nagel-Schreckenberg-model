@@ -73,7 +73,8 @@ def random_change(route):
                             cell, col[index + 1] = col[index + 1], cell
                     elif section.section_type == "bend_left" and index > 0 and col[index - 1].agent_state == 0:
                         cell, col[index - 1] = col[index - 1], cell
-                    elif section.section_type == "bend_right" and index < section.width - 1 and col[index + 1].agent_state == 0:
+                    elif section.section_type == "bend_right" and index < section.width - 1 and col[
+                        index + 1].agent_state == 0:
                         cell, col[index + 1] = col[index + 1], cell
 
 
@@ -114,13 +115,13 @@ def change_line(route):
                     free_space_on_right = -1
                     free_space = free_space_infront(route, section_index, cell_index, col_index)
                     if cell_index > 0:
-                        if route[section_index].road[col_index][cell_index-1].agent_state == 1:
+                        if route[section_index].road[col_index][cell_index - 1].agent_state == 1:
                             free_space_on_left = -1
                         else:
                             free_space_on_left = free_space_infront(route, section_index, cell_index - 1, col_index)
 
                     if cell_index < section.width - 1:
-                        if route[section_index].road[col_index][cell_index+1].agent_state == 1:
+                        if route[section_index].road[col_index][cell_index + 1].agent_state == 1:
                             free_space_on_right = -1
                         else:
                             free_space_on_right = free_space_infront(route, section_index, cell_index + 1, col_index)
@@ -128,7 +129,7 @@ def change_line(route):
                     can_change = True
                     if free_space_on_left > free_space_on_right and free_space_on_left > free_space:
                         for col_back in range(safety_look_back):
-                            if section.road[col_index - col_back][cell_index-1].agent_state == 1:
+                            if section.road[col_index - col_back][cell_index - 1].agent_state == 1:
                                 can_change = False
                                 break
                         if can_change:
@@ -138,7 +139,7 @@ def change_line(route):
 
                     elif free_space_on_right > free_space_on_left and free_space_on_right > free_space:
                         for col_back in range(safety_look_back):
-                            if section.road[col_index - col_back][cell_index+1].agent_state == 1:
+                            if section.road[col_index - col_back][cell_index + 1].agent_state == 1:
                                 can_change = False
                                 break
                         if can_change:
@@ -173,7 +174,8 @@ def free_space_infront(route, section_index, cell_index, col_index):
                 free_space = i
                 break
         elif section_index + 1 < len(route) and not route[section_index].narrowing[cell_index]:
-            next_cell = route[section_index + 1].road[next_col_index - route[section_index].length][route[section_index].output[cell_index]]
+            next_cell = route[section_index + 1].road[next_col_index - route[section_index].length][
+                route[section_index].output[cell_index]]
             if next_cell.agent_state == 1:
                 free_space = i
                 break
@@ -205,7 +207,8 @@ def update(route):
 
                         new_cell_index = section.output[cell_index]
                         new_route[section_index + 1].road[new_col_index][new_cell_index].agent_state = 1
-                        new_route[section_index + 1].road[new_col_index][new_cell_index].max_velocity = cell.max_velocity
+                        new_route[section_index + 1].road[new_col_index][
+                            new_cell_index].max_velocity = cell.max_velocity
                         new_route[section_index + 1].road[new_col_index][new_cell_index].velocity = cell.velocity
     return new_route
 
@@ -229,33 +232,39 @@ def create_route():
     return route
 
 
-my_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]), Section("straight", 20, 3, [0, 1, 2], [False, False, False])]
+my_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+            Section("straight", 20, 3, [0, 1, 2], [False, False, False])]
 
 
-def create_window():
+def create_window(section_nr, simulation_result):
     root = tk.Tk()
     root.geometry("300x500")
+    steps_result = simulation_result.sectionResultsList[int(section_nr)].stepsResultList[0]
 
-    for i in range(10):
-        for j in range(4):
-            canvas = tk.Canvas(root,
-                               bg="blue",
-                               width=10,
-                               height=10)
-            canvas.grid(row=i, column=j)
+    x, y = steps_result.shape
+    for i in range(x):
+        for j in range(y):
+            if steps_result[i][j] == 0:
+                canvas = tk.Canvas(root,
+                                   bg="blue",
+                                   width=15,
+                                   height=15)
+                canvas.grid(row=i, column=j)
+            elif steps_result[i][j] == 1:
+                canvas = tk.Canvas(root,
+                                   bg="red",
+                                   width=15,
+                                   height=15)
+                canvas.grid(row=i, column=j)
 
     root.mainloop()
-
-
-def button_push():
-    create_window()
 
 
 def create_widgets(result):
     parent = tk.Tk()
     parent.geometry("300x100")
-    l1 = tk.Label(parent, text="Rule (0-255) : ", font="Sans-serif 14", bg="#B0C4DE", bd=1,
-                    relief=tk.RAISED)  # Main Window
+    l1 = tk.Label(parent, text="Section : ", font="Sans-serif 14", bg="#B0C4DE", bd=1,
+                  relief=tk.RAISED)  # Main Window
     l1.grid(row=0, column=0, sticky=tk.W + tk.E)
 
     variable = tk.StringVar(parent)
@@ -264,33 +273,33 @@ def create_widgets(result):
     for i, _ in enumerate(result.sectionResultsList):
         result_indexes.append(str(i))
     menu = tk.OptionMenu(parent, variable, *result_indexes)
+
     menu.grid(row=0, column=1, sticky=tk.W + tk.E)
 
     btn = tk.Button(parent, text=" OK ", font="Sans-serif 10", bg="#3CB371",  # OK Button
-                       command=button_push, pady=0)
+                    command=lambda: create_window(variable.get(), result), pady=0)
     btn.grid(row=5, column=0, sticky=tk.W + tk.E, columnspan=2)
     return parent
 
 
-# result = mock_result()
-# root = create_widgets(result)
-# root.mainloop()
+result = mock_result()
+root = create_widgets(result)
+root.mainloop()
 
-
-for _ in range(50):
-    clear = "\n" * 100
-    print(clear)
-    # clear_output()
-    for i, section in enumerate(my_route):
-        if i == 0:
-            show_section(section)
-        else:
-            show_section(section)
-
-    accelerate(my_route)
-    random_change(my_route)
-    my_route = change_line(my_route)
-    avoid_crashes(my_route)
-    my_route = update(my_route)
-    time.sleep(1)
-    # input('press enter')
+# for _ in range(50):
+#     clear = "\n" * 100
+#     print(clear)
+#     # clear_output()
+#     for i, section in enumerate(my_route):
+#         if i == 0:
+#             show_section(section)
+#         else:
+#             show_section(section)
+#
+#     accelerate(my_route)
+#     random_change(my_route)
+#     my_route = change_line(my_route)
+#     avoid_crashes(my_route)
+#     my_route = update(my_route)
+#     time.sleep(1)
+#     # input('press enter')
