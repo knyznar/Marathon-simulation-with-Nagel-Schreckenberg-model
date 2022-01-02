@@ -229,7 +229,8 @@ def create_route():
              Section("straight", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])]
     return route
 
-def create_window():
+
+def create_window(section_nr, simulation_result):
     root = tk.Tk()
     root.geometry("300x500")
     steps_result = simulation_result.sectionResultsList[int(section_nr)].stepsResultList[0]
