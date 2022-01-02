@@ -21,7 +21,7 @@ def mock_result():
     for i in range(nr_of_section):
         section_result = SectionResult()
         for j in range(nr_of_steps):
-            section_result.stepsResultList.append(np.zeros((10, 10)))
+            section_result.stepsResultList.append(np.zeros((10, 8)))
         simulation_result.sectionResultsList.append(section_result)
 
     return simulation_result
@@ -74,7 +74,8 @@ def random_change(route):
                             cell, col[index + 1] = col[index + 1], cell
                     elif section.section_type == "bend_left" and index > 0 and col[index - 1].agent_state == 0:
                         cell, col[index - 1] = col[index - 1], cell
-                    elif section.section_type == "bend_right" and index < section.width - 1 and col[index + 1].agent_state == 0:
+                    elif section.section_type == "bend_right" and index < section.width - 1 and col[
+                        index + 1].agent_state == 0:
                         cell, col[index + 1] = col[index + 1], cell
 
 
@@ -174,7 +175,8 @@ def free_space_infront(route, section_index, cell_index, col_index):
                 free_space = i
                 break
         elif section_index + 1 < len(route) and not route[section_index].narrowing[cell_index]:
-            next_cell = route[section_index + 1].road[next_col_index - route[section_index].length][route[section_index].output[cell_index]]
+            next_cell = route[section_index + 1].road[next_col_index - route[section_index].length][
+                route[section_index].output[cell_index]]
             if next_cell.agent_state == 1:
                 free_space = i
                 break
@@ -206,7 +208,8 @@ def update(route):
 
                         new_cell_index = section.output[cell_index]
                         new_route[section_index + 1].road[new_col_index][new_cell_index].agent_state = 1
-                        new_route[section_index + 1].road[new_col_index][new_cell_index].max_velocity = cell.max_velocity
+                        new_route[section_index + 1].road[new_col_index][
+                            new_cell_index].max_velocity = cell.max_velocity
                         new_route[section_index + 1].road[new_col_index][new_cell_index].velocity = cell.velocity
     return new_route
 
@@ -230,28 +233,72 @@ def create_route():
     return route
 
 
-def create_window(section_nr, simulation_result):
-    root = tk.Tk()
-    root.geometry("300x500")
-    steps_result = simulation_result.sectionResultsList[int(section_nr)].stepsResultList[0]
+def draw_canvas(step, simulation_result, section_nr, canvas_root, direction):
+    for widget in canvas_root.winfo_children():
+        if widget.widgetName == 'canvas':
+            widget.destroy()
 
+    if direction == "prev":
+        step[0] -= 1
+    elif direction == "next":
+        step[0] += 1
+
+    steps_result = simulation_result.sectionResultsList[int(section_nr)].stepsResultList[step[0]]
     x, y = steps_result.shape
     for i in range(x):
         for j in range(y):
             if steps_result[i][j] == 0:
-                canvas = tk.Canvas(root,
+                canvas = tk.Canvas(canvas_root,
                                    bg="blue",
                                    width=15,
                                    height=15)
                 canvas.grid(row=i, column=j)
             elif steps_result[i][j] == 1:
-                canvas = tk.Canvas(root,
+                canvas = tk.Canvas(canvas_root,
                                    bg="red",
                                    width=15,
                                    height=15)
                 canvas.grid(row=i, column=j)
 
-    root.mainloop()
+
+running = False
+
+
+def play_pause():
+    global running
+    running = not running
+
+
+def animate(step, simulation_result, section_nr, canvas_root):
+    if running:  # Only do this if the Stop button has not been clicked
+        draw_canvas(step, simulation_result, section_nr, canvas_root, "next")
+        canvas_root.update()
+
+    # After 1 second, call scanning again (create a recursive loop)
+    root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
+
+
+def create_window(section_nr, simulation_result):
+    canvas_root = tk.Tk()
+    canvas_root.geometry("300x500")
+    step = [0]
+    nr_of_steps = len(simulation_result.sectionResultsList[0].stepsResultList) - 1
+    draw_canvas(step, simulation_result, section_nr, canvas_root, "none")
+
+    btn = tk.Button(canvas_root, text="PREV STEP", font="Sans-serif 10", bg="#3CB371",
+                    command=lambda: draw_canvas(step, simulation_result, section_nr, canvas_root, "prev"))
+    btn.grid(row=50, column=0, sticky=tk.W + tk.E, columnspan=5)
+
+    btn = tk.Button(canvas_root, text="PLAY/PAUSE", font="Sans-serif 10", bg="#3CB371",
+                    command = play_pause)
+    btn.grid(row=50, column=5, sticky=tk.W + tk.E, columnspan=5)
+
+    btn = tk.Button(canvas_root, text="NEXT STEP", font="Sans-serif 10", bg="#3CB371",
+                    command=lambda: draw_canvas(step, simulation_result, section_nr, canvas_root, "next"))
+    btn.grid(row=50, column=10, sticky=tk.W + tk.E, columnspan=5)
+
+    canvas_root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
+    canvas_root.mainloop()
 
 
 def create_widgets(result):
@@ -306,11 +353,13 @@ def run_simulation():
         # input('press enter')
 
         for section_index, section in enumerate(my_route):
-            simulation_result.sectionResultsList[section_index].stepsResultList.append(np.zeros((section.length, section.width)))
+            simulation_result.sectionResultsList[section_index].stepsResultList.append(
+                np.zeros((section.length, section.width)))
             for col_index, col in enumerate(section.road):
                 for cell_index, cell in enumerate(col):
                     if cell.agent_state == 1:
-                        simulation_result.sectionResultsList[section_index].stepsResultList[step][col_index][cell_index] = 1
+                        simulation_result.sectionResultsList[section_index].stepsResultList[step][col_index][
+                            cell_index] = 1
 
     return simulation_result
 
