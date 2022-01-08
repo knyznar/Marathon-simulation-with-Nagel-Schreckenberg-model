@@ -38,11 +38,11 @@ class Section:
         if (section_type == "start"):
             for col in range(length):
                 for cell in range(width):
-                    self.road[col][cell] = Agent(random.randint(1, 10), 1)
+                    self.road[col][cell] = Agent(random.randint(1, 5), 1)
         else:
             for col in range(length):
                 for cell in range(width):
-                    self.road[col][cell] = Agent(random.randint(1, 10), 0)
+                    self.road[col][cell] = Agent(random.randint(1, 5), 0)
 
         self.output = output
         self.length = length
@@ -74,12 +74,11 @@ def random_change(route):
                             cell, col[index + 1] = col[index + 1], cell
                     elif section.section_type == "bend_left" and index > 0 and col[index - 1].agent_state == 0:
                         cell, col[index - 1] = col[index - 1], cell
-                    elif section.section_type == "bend_right" and index < section.width - 1 and col[
-                        index + 1].agent_state == 0:
+                    elif section.section_type == "bend_right" and index < section.width - 1 and col[index + 1].agent_state == 0:
                         cell, col[index + 1] = col[index + 1], cell
 
 
-def beverage_dispensing_line_change(route):
+def beverage_dispensing_line_change(route):  # TODO
     return
 
 
@@ -89,10 +88,6 @@ def accelerate(route):
             for cell in col:
                 if cell.velocity < cell.max_velocity:
                     cell.velocity += 1
-
-
-def change_line_on_bend():
-    return
 
 
 # todo check 2nd line right and 2nd line left
@@ -229,7 +224,7 @@ def show_section(section):
 def create_route():
     route = [Section("straight", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
              Section("straight", 20, 3, [1, 2, 3], [False, False, False]),
-             Section("straight", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])]
+             Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])]
     return route
 
 
@@ -243,22 +238,30 @@ def draw_canvas(step, simulation_result, section_nr, canvas_root, direction):
     elif direction == "next":
         step[0] += 1
 
+    runners_count = 0
     steps_result = simulation_result.sectionResultsList[int(section_nr)].stepsResultList[step[0]]
     x, y = steps_result.shape
     for i in range(x):
         for j in range(y):
             if steps_result[i][j] == 0:
                 canvas = tk.Canvas(canvas_root,
-                                   bg="blue",
+                                   bg="gray",
                                    width=15,
                                    height=15)
-                canvas.grid(row=i, column=j)
+                canvas.grid(row=j, column=i)
             elif steps_result[i][j] == 1:
+                runners_count += 1
                 canvas = tk.Canvas(canvas_root,
                                    bg="red",
                                    width=15,
                                    height=15)
-                canvas.grid(row=i, column=j)
+                canvas.grid(row=j, column=i)
+
+    # Show number of runners and step
+    label = tk.Label(canvas_root, text="Step " + str(step[0]), relief=tk.RAISED)
+    label.grid(row=90, column=5, sticky=tk.W + tk.E, columnspan=5)
+    label = tk.Label(canvas_root, text="Runners: " + str(runners_count), relief=tk.RAISED)
+    label.grid(row=100, column=5, sticky=tk.W + tk.E, columnspan=5)
 
 
 running = False
@@ -278,9 +281,9 @@ def animate(step, simulation_result, section_nr, canvas_root):
     root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
 
 
-def create_window(section_nr, simulation_result):
+def create_window(section_nr, simulation_result, my_route):
     canvas_root = tk.Tk()
-    canvas_root.geometry("300x500")
+    canvas_root.geometry("500x300")
     step = [0]
     nr_of_steps = len(simulation_result.sectionResultsList[0].stepsResultList) - 1
     draw_canvas(step, simulation_result, section_nr, canvas_root, "none")
@@ -290,18 +293,26 @@ def create_window(section_nr, simulation_result):
     btn.grid(row=50, column=0, sticky=tk.W + tk.E, columnspan=5)
 
     btn = tk.Button(canvas_root, text="PLAY/PAUSE", font="Sans-serif 10", bg="#3CB371",
-                    command = play_pause)
+                    command=play_pause)
     btn.grid(row=50, column=5, sticky=tk.W + tk.E, columnspan=5)
 
     btn = tk.Button(canvas_root, text="NEXT STEP", font="Sans-serif 10", bg="#3CB371",
                     command=lambda: draw_canvas(step, simulation_result, section_nr, canvas_root, "next"))
     btn.grid(row=50, column=10, sticky=tk.W + tk.E, columnspan=5)
 
+    # Show section info
+    l1 = tk.Label(canvas_root)  # empty row as margin-top
+    l1.grid(row=60, column=1, sticky=tk.W + tk.E, columnspan=5)
+
+    section_name = my_route[int(section_nr)].section_type.upper() + " SECTION"
+    label = tk.Label(canvas_root, text=section_name, relief=tk.RAISED)
+    label.grid(row=80, column=5, sticky=tk.W + tk.E, columnspan=5)
+
     canvas_root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
     canvas_root.mainloop()
 
 
-def create_widgets(result):
+def create_widgets(result, my_route):
     parent = tk.Tk()
     parent.geometry("300x100")
     l1 = tk.Label(parent, text="Section : ", font="Sans-serif 14", bg="#B0C4DE", bd=1,
@@ -318,18 +329,13 @@ def create_widgets(result):
     menu.grid(row=0, column=1, sticky=tk.W + tk.E)
 
     btn = tk.Button(parent, text=" OK ", font="Sans-serif 10", bg="#3CB371",  # OK Button
-                    command=lambda: create_window(variable.get(), result), pady=0)
+                    command=lambda: create_window(variable.get(), result, my_route), pady=0)
     btn.grid(row=5, column=0, sticky=tk.W + tk.E, columnspan=2)
     return parent
 
 
-def run_simulation():
+def run_simulation(my_route):
     simulation_result = SimulationResult()
-
-    my_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
-                Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
-                Section("straight", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])
-                ]
 
     for section in my_route:
         simulation_result.sectionResultsList.append(SectionResult())
@@ -349,8 +355,6 @@ def run_simulation():
         my_route = change_line(my_route)
         avoid_crashes(my_route)
         my_route = update(my_route)
-        # time.sleep(1)
-        # input('press enter')
 
         for section_index, section in enumerate(my_route):
             simulation_result.sectionResultsList[section_index].stepsResultList.append(
@@ -364,6 +368,11 @@ def run_simulation():
     return simulation_result
 
 
-result = run_simulation()
-root = create_widgets(result)
+init_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+              Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
+              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])
+              ]
+
+result = run_simulation(init_route)
+root = create_widgets(result, init_route)
 root.mainloop()
