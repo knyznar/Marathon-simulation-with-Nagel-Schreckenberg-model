@@ -35,7 +35,7 @@ class Section:
     def __init__(self, section_type, length, width, output, narrowing):
         self.width = width
         self.road = np.ndarray((length, width), dtype=np.object)
-        if (section_type == "start"):
+        if section_type == "start":
             for col in range(length):
                 for cell in range(width):
                     self.road[col][cell] = Agent(random.randint(1, 5), 1)
@@ -55,6 +55,7 @@ class Agent:
         self.agent_state = agent_state  # 0 - empty road, 1 - runner
         self.velocity = 0
         self.max_velocity = max_velocity
+        self.is_thirsty = False  # this only matters on section beverage
 
 
 changing_line_probability = 0.9
@@ -69,17 +70,75 @@ def random_change(route):
                     if section.section_type == "straight" or section.section_type == "start":
                         left_or_right = random.randint(0, 1)
                         if left_or_right == 0 and index > 0 and col[index - 1].agent_state == 0:
-                            cell, col[index - 1] = col[index - 1], cell
+                            # cell, col[index - 1] = col[index - 1], cell
+                            col[index - 1].agent_state = 1
+                            col[index - 1].velocity = cell.velocity
+                            cell.agent_state = 0
+                            cell.velocity = 0
                         elif left_or_right == 1 and index < section.width - 1 and col[index + 1].agent_state == 0:
-                            cell, col[index + 1] = col[index + 1], cell
+                            # cell, col[index + 1] = col[index + 1], cell
+                            col[index + 1].agent_state = 1
+                            col[index + 1].velocity = cell.velocity
+                            cell.agent_state = 0
+                            cell.velocity = 0
                     elif section.section_type == "bend_left" and index > 0 and col[index - 1].agent_state == 0:
-                        cell, col[index - 1] = col[index - 1], cell
+                        # cell, col[index - 1] = col[index - 1], cell
+                        col[index - 1].agent_state = 1
+                        col[index - 1].velocity = cell.velocity
+                        cell.agent_state = 0
+                        cell.velocity = 0
                     elif section.section_type == "bend_right" and index < section.width - 1 and col[index + 1].agent_state == 0:
-                        cell, col[index + 1] = col[index + 1], cell
+                        # cell, col[index + 1] = col[index + 1], cell
+                        col[index+1].agent_state = 1
+                        col[index + 1].velocity = cell.velocity
+                        cell.agent_state = 0
+                        cell.velocity = 0
 
 
-def beverage_dispensing_line_change(route):  # TODO
-    return
+def beverage_dispensing_line_change(route):  # TODO (let's say beverage dispensing points always are on the right)
+    new_route = create_route()
+    for section_index, section in enumerate(route):
+        for col_index, col in enumerate(section.road):
+            for cell_index, cell in enumerate(col):
+                if cell.agent_state == 1:  # and cell.is_thirsty:
+                    agent_velocity = route[section_index].road[col_index][cell_index].velocity
+                    agent_max_velocity = route[section_index].road[col_index][cell_index].max_velocity
+
+                    if section.section_type != "beverage":
+                        new_route[section_index].road[col_index][cell_index].agent_state = 1
+                        new_route[section_index].road[col_index][cell_index].velocity = agent_velocity
+                        new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+                        continue
+
+                    if cell.is_thirsty:
+                        if cell_index < section.width - 1:
+                            if route[section_index].road[col_index][cell_index + 1].agent_state != 1:
+                                new_route[section_index].road[col_index][cell_index + 1].agent_state = 1
+                                new_route[section_index].road[col_index][cell_index + 1].is_thirsty = True
+                                new_route[section_index].road[col_index][cell_index + 1].velocity = 1
+                                new_route[section_index].road[col_index][cell_index + 1].max_velocity = agent_max_velocity
+                            else:
+                                new_route[section_index].road[col_index][cell_index].agent_state = 1
+                                new_route[section_index].road[col_index][cell_index].velocity = 0
+                                new_route[section_index].road[col_index][cell_index].is_thirsty = True
+                                new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+
+                        elif cell_index == section.width - 1 and col_index < 4*(section.length//5):  # stoisko z napojami w 4/5 długości sekcji ??
+                            new_route[section_index].road[col_index][cell_index].agent_state = 1
+                            new_route[section_index].road[col_index][cell_index].velocity = 1
+                            new_route[section_index].road[col_index][cell_index].is_thirsty = True
+                            new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+
+                        elif cell_index == section.width - 1 and col_index >= 2*(section.length//3):
+                            new_route[section_index].road[col_index][cell_index].agent_state = 1
+                            new_route[section_index].road[col_index][cell_index].velocity = agent_velocity
+                            new_route[section_index].road[col_index][cell_index].is_thirsty = False
+                            new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+                    else:
+                        new_route[section_index].road[col_index][cell_index].agent_state = 1
+                        new_route[section_index].road[col_index][cell_index].velocity = agent_velocity
+                        new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+    return new_route
 
 
 def accelerate(route):
@@ -100,11 +159,13 @@ def change_line(route):
 
                     agent_velocity = route[section_index].road[col_index][cell_index].velocity
                     agent_max_velocity = route[section_index].road[col_index][cell_index].max_velocity
+                    agent_is_thirsty = route[section_index].road[col_index][cell_index].is_thirsty
 
-                    if safety_look_back > col_index:
+                    if safety_look_back > col_index or section.section_type == "beverage":
                         new_route[section_index].road[col_index][cell_index].agent_state = 1
                         new_route[section_index].road[col_index][cell_index].velocity = agent_velocity
                         new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+                        new_route[section_index].road[col_index][cell_index].is_thirsty = agent_is_thirsty
                         continue
 
                     free_space_on_left = -1
@@ -132,6 +193,7 @@ def change_line(route):
                             new_route[section_index].road[col_index][cell_index - 1].agent_state = 1
                             new_route[section_index].road[col_index][cell_index - 1].velocity = agent_velocity
                             new_route[section_index].road[col_index][cell_index - 1].max_velocity = agent_max_velocity
+                            new_route[section_index].road[col_index][cell_index - 1].is_thirsty = agent_is_thirsty
 
                     elif free_space_on_right > free_space_on_left and free_space_on_right > free_space:
                         for col_back in range(safety_look_back):
@@ -142,10 +204,12 @@ def change_line(route):
                             new_route[section_index].road[col_index][cell_index + 1].agent_state = 1
                             new_route[section_index].road[col_index][cell_index + 1].velocity = agent_velocity
                             new_route[section_index].road[col_index][cell_index + 1].max_velocity = agent_max_velocity
+                            new_route[section_index].road[col_index][cell_index + 1].is_thirsty = agent_is_thirsty
                     else:
                         new_route[section_index].road[col_index][cell_index].agent_state = 1
                         new_route[section_index].road[col_index][cell_index].velocity = agent_velocity
                         new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
+                        new_route[section_index].road[col_index][cell_index].is_thirsty = agent_is_thirsty
     return new_route
 
 
@@ -206,6 +270,9 @@ def update(route):
                         new_route[section_index + 1].road[new_col_index][
                             new_cell_index].max_velocity = cell.max_velocity
                         new_route[section_index + 1].road[new_col_index][new_cell_index].velocity = cell.velocity
+
+                        # if new_route[section_index + 1].section_type == "beverage" and random.uniform(0, 1) <= 1:  # on beverage dispensing section, 100% chance of agent being thirsty
+                        #     new_route[section_index + 1].road[new_col_index][new_cell_index].is_thirsty = True
     return new_route
 
 
@@ -306,7 +373,7 @@ def create_window(section_nr, simulation_result, my_route):
 
     section_name = my_route[int(section_nr)].section_type.upper() + " SECTION"
     label = tk.Label(canvas_root, text=section_name, relief=tk.RAISED)
-    label.grid(row=80, column=5, sticky=tk.W + tk.E, columnspan=5)
+    label.grid(row=80, column=4, sticky=tk.W + tk.E, columnspan=7)
 
     canvas_root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
     canvas_root.mainloop()
@@ -353,6 +420,7 @@ def run_simulation(my_route):
         accelerate(my_route)
         random_change(my_route)
         my_route = change_line(my_route)
+        # my_route = beverage_dispensing_line_change(my_route)
         avoid_crashes(my_route)
         my_route = update(my_route)
 
