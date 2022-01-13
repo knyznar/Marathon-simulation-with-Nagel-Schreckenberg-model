@@ -1,6 +1,6 @@
+# coding=utf-8
 import numpy as np
 import random
-import time
 import tkinter as tk
 
 
@@ -123,7 +123,8 @@ def beverage_dispensing_line_change(route):  # TODO (let's say beverage dispensi
                                 new_route[section_index].road[col_index][cell_index].is_thirsty = True
                                 new_route[section_index].road[col_index][cell_index].max_velocity = agent_max_velocity
 
-                        elif cell_index == section.width - 1 and col_index < 4*(section.length//5):  # stoisko z napojami w 4/5 długości sekcji ??
+                        #  stoisko z napojami w 4/5 długości sekcji ??
+                        elif cell_index == section.width - 1 and col_index < 4*(section.length//5):
                             new_route[section_index].road[col_index][cell_index].agent_state = 1
                             new_route[section_index].road[col_index][cell_index].velocity = 1
                             new_route[section_index].road[col_index][cell_index].is_thirsty = True
@@ -177,11 +178,23 @@ def change_line(route):
                         else:
                             free_space_on_left = free_space_infront(route, section_index, cell_index - 1, col_index)
 
+                    if cell_index > 1:
+                        if route[section_index].road[col_index][cell_index - 2].agent_state == 1:
+                            free_space_on_left = -1
+                        elif free_space_on_left > free_space_infront(route, section_index, cell_index - 2, col_index):
+                            free_space_on_left = free_space_infront(route, section_index, cell_index - 2, col_index)
+
                     if cell_index < section.width - 1:
                         if route[section_index].road[col_index][cell_index + 1].agent_state == 1:
                             free_space_on_right = -1
                         else:
                             free_space_on_right = free_space_infront(route, section_index, cell_index + 1, col_index)
+
+                    if cell_index < section.width - 2:
+                        if route[section_index].road[col_index][cell_index + 2].agent_state == 1:
+                            free_space_on_right = -1
+                        elif free_space_on_right > free_space_infront(route, section_index, cell_index + 2, col_index):
+                            free_space_on_right = free_space_infront(route, section_index, cell_index + 2, col_index)
 
                     can_change = True
                     if free_space_on_left > free_space_on_right and free_space_on_left > free_space:
@@ -291,7 +304,12 @@ def show_section(section):
 def create_route():
     route = [Section("straight", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
              Section("straight", 20, 3, [1, 2, 3], [False, False, False]),
-             Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])]
+             Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True]),
+             Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+             Section("straight", 20, 3, [0, 0, 1], [False, False, False]),
+             Section("bend_left", 20, 2, [0, 1], [True, False, False, False, True]),
+             Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
+             ]
     return route
 
 
@@ -407,20 +425,11 @@ def run_simulation(my_route):
     for section in my_route:
         simulation_result.sectionResultsList.append(SectionResult())
 
-    for step in range(50):
-        # clear = "\n" * 100
-        # print(clear)
-        # clear_output()
-        # for i, section in enumerate(my_route):
-        #     if i == 0:
-        #         show_section(section)
-        #     else:
-        #         show_section(section)
-
+    for step in range(200):
         accelerate(my_route)
         random_change(my_route)
         my_route = change_line(my_route)
-        # my_route = beverage_dispensing_line_change(my_route)
+        my_route = beverage_dispensing_line_change(my_route)
         avoid_crashes(my_route)
         my_route = update(my_route)
 
@@ -438,7 +447,11 @@ def run_simulation(my_route):
 
 init_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
               Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
-              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True])
+              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True]),
+              Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+              Section("straight", 20, 3, [0, 0, 1], [False, False, False]),
+              Section("bend_left", 20, 2, [0, 1], [True, False, False, False, True]),
+              Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
               ]
 
 result = run_simulation(init_route)
