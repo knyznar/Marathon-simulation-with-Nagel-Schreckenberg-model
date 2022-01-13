@@ -86,9 +86,10 @@ def random_change(route):
                         col[index - 1].velocity = cell.velocity
                         cell.agent_state = 0
                         cell.velocity = 0
-                    elif section.section_type == "bend_right" and index < section.width - 1 and col[index + 1].agent_state == 0:
+                    elif section.section_type == "bend_right" and index < section.width - 1 and col[
+                        index + 1].agent_state == 0:
                         # cell, col[index + 1] = col[index + 1], cell
-                        col[index+1].agent_state = 1
+                        col[index + 1].agent_state = 1
                         col[index + 1].velocity = cell.velocity
                         cell.agent_state = 0
                         cell.velocity = 0
@@ -128,28 +129,18 @@ def change_line(route):
                         else:
                             free_space_on_left = free_space_infront(route, section_index, cell_index - 1, col_index)
 
-                    if cell_index > 1:
-                        if route[section_index].road[col_index][cell_index - 2].agent_state == 1:
-                            free_space_on_left = -1
-                        elif free_space_on_left > free_space_infront(route, section_index, cell_index - 2, col_index):
-                            free_space_on_left = free_space_infront(route, section_index, cell_index - 2, col_index)
-
                     if cell_index < section.width - 1:
                         if route[section_index].road[col_index][cell_index + 1].agent_state == 1:
                             free_space_on_right = -1
                         else:
                             free_space_on_right = free_space_infront(route, section_index, cell_index + 1, col_index)
 
-                    if cell_index < section.width - 2:
-                        if route[section_index].road[col_index][cell_index + 2].agent_state == 1:
-                            free_space_on_right = -1
-                        elif free_space_on_right > free_space_infront(route, section_index, cell_index + 2, col_index):
-                            free_space_on_right = free_space_infront(route, section_index, cell_index + 2, col_index)
-
                     can_change = True
                     if free_space_on_left > free_space_on_right and free_space_on_left > free_space:
                         for col_back in range(safety_look_back):
-                            if section.road[col_index - col_back][cell_index - 1].agent_state == 1:
+                            if section.road[col_index - col_back][cell_index - 1].agent_state == 1 \
+                                    or (cell_index > 1
+                                        and section.road[col_index - col_back][cell_index - 1].agent_state == 1):
                                 can_change = False
                                 break
                         if can_change:
@@ -159,7 +150,9 @@ def change_line(route):
 
                     elif free_space_on_right > free_space_on_left and free_space_on_right > free_space:
                         for col_back in range(safety_look_back):
-                            if section.road[col_index - col_back][cell_index + 1].agent_state == 1:
+                            if section.road[col_index - col_back][cell_index + 1].agent_state == 1 \
+                                    or (cell_index < section.width - 2
+                                        and section.road[col_index - col_back][cell_index + 1].agent_state == 1):
                                 can_change = False
                                 break
                         if can_change:
