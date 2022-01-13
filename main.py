@@ -1,4 +1,6 @@
 # coding=utf-8
+import time
+
 import numpy as np
 import random
 import tkinter as tk
@@ -12,19 +14,6 @@ class SimulationResult:
 class SectionResult:
     def __init__(self):
         self.stepsResultList = []
-
-
-def mock_result():
-    simulation_result = SimulationResult()
-    nr_of_section = 5
-    nr_of_steps = 5
-    for i in range(nr_of_section):
-        section_result = SectionResult()
-        for j in range(nr_of_steps):
-            section_result.stepsResultList.append(np.zeros((10, 8)))
-        simulation_result.sectionResultsList.append(section_result)
-
-    return simulation_result
 
 
 class Section:
@@ -238,15 +227,11 @@ def show_section(section):
                 line += "O"
         print(line)
 
-def draw_canvas(simulation_result, section_nr, canvas_root, direction):
+
+def draw_canvas(simulation_result, section_nr, canvas_root):
     for widget in canvas_root.winfo_children():
         if widget.widgetName == 'canvas':
             widget.destroy()
-
-    if direction == "prev":
-        step[0] -= 1
-    elif direction == "next":
-        step[0] += 1
 
     runners_count = 0
     steps_result = simulation_result.sectionResultsList[int(section_nr)].stepsResultList[step[0]]
@@ -283,13 +268,24 @@ def play_pause():
     running = not running
 
 
-def animate(simulation_result, section_nr, canvas_root):
-    if running:  # Only do this if the Stop button has not been clicked
-        draw_canvas(simulation_result, section_nr, canvas_root, "next")
-        canvas_root.update()
+def single_update(prev_or_next):
+    global single_update_next, single_update_prev
+    if prev_or_next == "next":
+        step[0] += 1
+    elif prev_or_next == "prev":
+        step[0] -= 1
 
-    # After 1 second, call scanning again (create a recursive loop)
-    root.after(1000, lambda: animate(simulation_result, section_nr, canvas_root))
+
+def update_step(this_root):
+    if running:  # Only do this if the Stop button has not been clicked
+        step[0] += 1
+    this_root.after(1000, lambda: update_step(this_root))
+
+
+def animate(simulation_result, section_nr, canvas_root):
+    draw_canvas(simulation_result, section_nr, canvas_root)
+    canvas_root.update()
+    root.after(500, lambda: animate(simulation_result, section_nr, canvas_root))
 
 
 def create_window(section_nr, simulation_result, my_route):
@@ -297,10 +293,10 @@ def create_window(section_nr, simulation_result, my_route):
     canvas_root.geometry("500x300")
     # step = [0]
     nr_of_steps = len(simulation_result.sectionResultsList[0].stepsResultList) - 1
-    draw_canvas(simulation_result, section_nr, canvas_root, "none")
+    draw_canvas(simulation_result, section_nr, canvas_root)
 
     btn = tk.Button(canvas_root, text="PREV STEP", font="Sans-serif 10", bg="#3CB371",
-                    command=lambda: draw_canvas(simulation_result, section_nr, canvas_root, "prev"))
+                    command=lambda: single_update("prev"))
     btn.grid(row=50, column=0, sticky=tk.W + tk.E, columnspan=5)
 
     btn = tk.Button(canvas_root, text="PLAY/PAUSE", font="Sans-serif 10", bg="#3CB371",
@@ -308,7 +304,7 @@ def create_window(section_nr, simulation_result, my_route):
     btn.grid(row=50, column=5, sticky=tk.W + tk.E, columnspan=5)
 
     btn = tk.Button(canvas_root, text="NEXT STEP", font="Sans-serif 10", bg="#3CB371",
-                    command=lambda: draw_canvas(simulation_result, section_nr, canvas_root, "next"))
+                    command=lambda: single_update("next"))
     btn.grid(row=50, column=10, sticky=tk.W + tk.E, columnspan=5)
 
     # Show section info
@@ -342,6 +338,8 @@ def create_widgets(result, my_route):
     btn = tk.Button(parent, text=" OK ", font="Sans-serif 10", bg="#3CB371",  # OK Button
                     command=lambda: create_window(variable.get(), result, my_route), pady=0)
     btn.grid(row=5, column=0, sticky=tk.W + tk.E, columnspan=2)
+
+    update_step(parent)
     return parent
 
 
@@ -370,7 +368,7 @@ def run_simulation(my_route):
     return simulation_result
 
 
-def create_route():
+def create_route(init=False):
     route = [Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
              Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [False, False, False, False, False]),
@@ -382,20 +380,19 @@ def create_route():
              Section("straight", 20, 1, [0], [False]),
              Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
              ]
+
+    if init:
+        route[0] = Section(
+            "start",
+            route[0].length,
+            route[0].width,
+            route[0].output,
+            route[0].narrowing
+        )
     return route
 
 
-init_route = [Section("start", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
-              Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
-              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [False, False, False, False, False]),
-              Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
-              Section("straight", 20, 3, [0, 0, 1], [True, False, False]),
-              Section("bend_left", 20, 2, [0, 1], [False, False]),
-              Section("straight", 20, 2, [0, 0], [False, True]),
-              Section("straight", 20, 1, [0], [False]),
-              Section("straight", 20, 1, [0], [False]),
-              Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
-              ]
+init_route = create_route(init=True)
 
 result = run_simulation(init_route)
 root = create_widgets(result, init_route)
