@@ -238,19 +238,6 @@ def show_section(section):
                 line += "O"
         print(line)
 
-
-def create_route():
-    route = [Section("straight", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
-             Section("straight", 20, 3, [1, 2, 3], [False, False, False]),
-             Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True]),
-             Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
-             Section("straight", 20, 3, [0, 0, 1], [False, False, False]),
-             Section("bend_left", 20, 2, [0, 1], [True, False, False, False, True]),
-             Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
-             ]
-    return route
-
-
 def draw_canvas(simulation_result, section_nr, canvas_root, direction):
     for widget in canvas_root.winfo_children():
         if widget.widgetName == 'canvas':
@@ -383,12 +370,30 @@ def run_simulation(my_route):
     return simulation_result
 
 
-init_route = [Section("start", 10, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+def create_route():
+    route = [Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+             Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
+             Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [False, False, False, False, False]),
+             Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
+             Section("straight", 20, 3, [0, 0, 1], [True, False, False]),
+             Section("bend_left", 20, 2, [0, 1], [False, False]),
+             Section("straight", 20, 2, [0, 0], [False, True]),
+             Section("straight", 20, 1, [0], [False]),
+             Section("straight", 20, 1, [0], [False]),
+             Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
+             ]
+    return route
+
+
+init_route = [Section("start", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
               Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
-              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [True, False, False, False, True]),
+              Section("bend_right", 20, 5, [0, 1, 2, 3, 4], [False, False, False, False, False]),
               Section("straight", 20, 5, [0, 0, 1, 2, 2], [True, False, False, False, True]),
-              Section("straight", 20, 3, [0, 0, 1], [False, False, False]),
-              Section("bend_left", 20, 2, [0, 1], [True, False, False, False, True]),
+              Section("straight", 20, 3, [0, 0, 1], [True, False, False]),
+              Section("bend_left", 20, 2, [0, 1], [False, False]),
+              Section("straight", 20, 2, [0, 0], [False, True]),
+              Section("straight", 20, 1, [0], [False]),
+              Section("straight", 20, 1, [0], [False]),
               Section("straight", 20, 3, [0, 1, 2], [False, False, False]),
               ]
 
