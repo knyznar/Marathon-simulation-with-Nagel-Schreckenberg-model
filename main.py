@@ -258,7 +258,7 @@ def create_route():
     return route
 
 
-def draw_canvas(step, simulation_result, section_nr, canvas_root, direction):
+def draw_canvas(simulation_result, section_nr, canvas_root, direction):
     for widget in canvas_root.winfo_children():
         if widget.widgetName == 'canvas':
             widget.destroy()
@@ -295,6 +295,7 @@ def draw_canvas(step, simulation_result, section_nr, canvas_root, direction):
 
 
 running = False
+step = [0]
 
 
 def play_pause():
@@ -302,24 +303,24 @@ def play_pause():
     running = not running
 
 
-def animate(step, simulation_result, section_nr, canvas_root):
+def animate(simulation_result, section_nr, canvas_root):
     if running:  # Only do this if the Stop button has not been clicked
-        draw_canvas(step, simulation_result, section_nr, canvas_root, "next")
+        draw_canvas(simulation_result, section_nr, canvas_root, "next")
         canvas_root.update()
 
     # After 1 second, call scanning again (create a recursive loop)
-    root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
+    root.after(1000, lambda: animate(simulation_result, section_nr, canvas_root))
 
 
 def create_window(section_nr, simulation_result, my_route):
     canvas_root = tk.Tk()
     canvas_root.geometry("500x300")
-    step = [0]
+    # step = [0]
     nr_of_steps = len(simulation_result.sectionResultsList[0].stepsResultList) - 1
-    draw_canvas(step, simulation_result, section_nr, canvas_root, "none")
+    draw_canvas(simulation_result, section_nr, canvas_root, "none")
 
     btn = tk.Button(canvas_root, text="PREV STEP", font="Sans-serif 10", bg="#3CB371",
-                    command=lambda: draw_canvas(step, simulation_result, section_nr, canvas_root, "prev"))
+                    command=lambda: draw_canvas(simulation_result, section_nr, canvas_root, "prev"))
     btn.grid(row=50, column=0, sticky=tk.W + tk.E, columnspan=5)
 
     btn = tk.Button(canvas_root, text="PLAY/PAUSE", font="Sans-serif 10", bg="#3CB371",
@@ -327,7 +328,7 @@ def create_window(section_nr, simulation_result, my_route):
     btn.grid(row=50, column=5, sticky=tk.W + tk.E, columnspan=5)
 
     btn = tk.Button(canvas_root, text="NEXT STEP", font="Sans-serif 10", bg="#3CB371",
-                    command=lambda: draw_canvas(step, simulation_result, section_nr, canvas_root, "next"))
+                    command=lambda: draw_canvas(simulation_result, section_nr, canvas_root, "next"))
     btn.grid(row=50, column=10, sticky=tk.W + tk.E, columnspan=5)
 
     # Show section info
@@ -338,7 +339,7 @@ def create_window(section_nr, simulation_result, my_route):
     label = tk.Label(canvas_root, text=section_name, relief=tk.RAISED)
     label.grid(row=80, column=4, sticky=tk.W + tk.E, columnspan=7)
 
-    canvas_root.after(1000, lambda: animate(step, simulation_result, section_nr, canvas_root))
+    canvas_root.after(1000, lambda: animate(simulation_result, section_nr, canvas_root))
     canvas_root.mainloop()
 
 
