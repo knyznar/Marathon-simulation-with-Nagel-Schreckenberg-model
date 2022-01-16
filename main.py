@@ -295,17 +295,6 @@ def create_window(section_nr, simulation_result, my_route):
     nr_of_steps = len(simulation_result.sectionResultsList[0].stepsResultList) - 1
     draw_canvas(simulation_result, section_nr, canvas_root)
 
-    btn = tk.Button(canvas_root, text="PREV STEP", font="Sans-serif 10", bg="#3CB371",
-                    command=lambda: single_update("prev"))
-    btn.grid(row=50, column=0, sticky=tk.W + tk.E, columnspan=5)
-
-    btn = tk.Button(canvas_root, text="PLAY/PAUSE", font="Sans-serif 10", bg="#3CB371",
-                    command=play_pause)
-    btn.grid(row=50, column=5, sticky=tk.W + tk.E, columnspan=5)
-
-    btn = tk.Button(canvas_root, text="NEXT STEP", font="Sans-serif 10", bg="#3CB371",
-                    command=lambda: single_update("next"))
-    btn.grid(row=50, column=10, sticky=tk.W + tk.E, columnspan=5)
 
     # Show section info
     l1 = tk.Label(canvas_root)  # empty row as margin-top
@@ -321,7 +310,7 @@ def create_window(section_nr, simulation_result, my_route):
 
 def create_widgets(result, my_route):
     parent = tk.Tk()
-    parent.geometry("300x100")
+    parent.geometry("500x100")
     l1 = tk.Label(parent, text="Section : ", font="Sans-serif 14", bg="#B0C4DE", bd=1,
                   relief=tk.RAISED)  # Main Window
     l1.grid(row=0, column=0, sticky=tk.W + tk.E)
@@ -338,6 +327,18 @@ def create_widgets(result, my_route):
     btn = tk.Button(parent, text=" OK ", font="Sans-serif 10", bg="#3CB371",  # OK Button
                     command=lambda: create_window(variable.get(), result, my_route), pady=0)
     btn.grid(row=5, column=0, sticky=tk.W + tk.E, columnspan=2)
+
+    btn = tk.Button(parent, text="PREV STEP", font="Sans-serif 10", bg="#3CB371",
+                    command=lambda: single_update("prev"))
+    btn.grid(row=10, column=0, sticky=tk.W + tk.E, columnspan=5)
+
+    btn = tk.Button(parent, text="PLAY/PAUSE", font="Sans-serif 10", bg="#3CB371",
+                    command=play_pause)
+    btn.grid(row=10, column=5, sticky=tk.W + tk.E, columnspan=5)
+
+    btn = tk.Button(parent, text="NEXT STEP", font="Sans-serif 10", bg="#3CB371",
+                    command=lambda: single_update("next"))
+    btn.grid(row=10, column=10, sticky=tk.W + tk.E, columnspan=5)
 
     update_step(parent)
     return parent
